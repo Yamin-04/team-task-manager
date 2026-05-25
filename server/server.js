@@ -1,51 +1,59 @@
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
-app.use(express.json());
+
 app.use(cors());
+app.use(express.json());
 
-// MongoDB Model
-const TaskSchema = new mongoose.Schema({
+// Home route
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
+
+// MongoDB connection
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected ✅");
+  })
+  .catch((err) => {
+    console.log("MongoDB Error ❌", err);
+  });
+
+// Task Schema
+const taskSchema = new mongoose.Schema({
   text: String,
-  completed: { type: Boolean, default: false },
 });
 
-const Task = mongoose.model("Task", TaskSchema);
+const Task = mongoose.model("Task", taskSchema);
 
-// CREATE TASK
-app.post("/api/tasks", async (req, res) => {
-  const task = await Task.create({ text: req.body.text });
-  res.json(task);
-});
-
-// GET TASKS
+// GET tasks
 app.get("/api/tasks", async (req, res) => {
   const tasks = await Task.find();
   res.json(tasks);
 });
 
-// DELETE TASK
+// ADD task
+app.post("/api/tasks", async (req, res) => {
+  const newTask = new Task({
+    text: req.body.text,
+  });
+
+  await newTask.save();
+  res.json(newTask);
+});
+
+// DELETE task
 app.delete("/api/tasks/:id", async (req, res) => {
   await Task.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted" });
+  res.json({ message: "Task deleted" });
 });
 
-// UPDATE TASK (edit + toggle complete)
-app.put("/api/tasks/:id", async (req, res) => {
-  const updated = await Task.findByIdAndUpdate(
-    req.params.id,
-    req.body,
-    { new: true }
-  );
-  res.json(updated);
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} 🚀`);
 });
-
-// CONNECT DB
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log(err));
-
-app.listen(5000, () => console.log("Server running on 5000"));
