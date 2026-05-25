@@ -4,100 +4,135 @@ import API from "./api";
 function App() {
   const [tasks, setTasks] = useState([]);
   const [text, setText] = useState("");
-  const [editId, setEditId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
-  // GET TASKS
+  // Fetch all tasks
   const fetchTasks = async () => {
-    const res = await API.get("/tasks");
-    setTasks(res.data);
+    try {
+      const res = await API.get("/tasks");
+      setTasks(res.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // ADD or UPDATE TASK
+  // Add or Update Task
   const handleSubmit = async () => {
     if (!text.trim()) return;
 
-    if (editId) {
-      await API.put(`/tasks/${editId}`, { text });
-      setEditId(null);
-    } else {
-      await API.post("/tasks", { text });
+    try {
+      if (editingId) {
+        // UPDATE
+        await API.put(`/tasks/${editingId}`, {
+          text,
+        });
+
+        setEditingId(null);
+      } else {
+        // ADD
+        await API.post("/tasks", {
+          text,
+        });
+      }
+
+      setText("");
+      fetchTasks();
+    } catch (error) {
+      console.log(error);
     }
-
-    setText("");
-    fetchTasks();
   };
 
-  // DELETE
-  const handleDelete = async (id) => {
-    await API.delete(`/tasks/${id}`);
-    fetchTasks();
+  // Delete Task
+  const deleteTask = async (id) => {
+    try {
+      await API.delete(`/tasks/${id}`);
+      fetchTasks();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  // EDIT
-  const handleEdit = (task) => {
+  // Edit Task
+  const editTask = (task) => {
     setText(task.text);
-    setEditId(task._id);
-  };
-
-  // TOGGLE COMPLETE
-  const toggleComplete = async (task) => {
-    await API.put(`/tasks/${task._id}`, {
-      completed: !task.completed,
-    });
-    fetchTasks();
+    setEditingId(task._id);
   };
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1>Team Task Manager</h1>
+    <div style={{ padding: "30px", fontFamily: "Arial" }}>
+      <h1>Team Task Manager 🚀</h1>
 
       <input
+        type="text"
+        placeholder="Enter task"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Enter task"
+        style={{
+          padding: "10px",
+          width: "250px",
+          marginRight: "10px",
+        }}
       />
 
-      <button onClick={handleSubmit}>
-        {editId ? "Update Task" : "Add Task"}
+      <button
+        onClick={handleSubmit}
+        style={{
+          padding: "10px 15px",
+          cursor: "pointer",
+        }}
+      >
+        {editingId ? "Update Task" : "Add Task"}
       </button>
 
-      <h3>Tasks</h3>
+      <h2 style={{ marginTop: "30px" }}>Tasks</h2>
 
-      {tasks.length === 0 && <p>No tasks yet</p>}
-
-      {tasks.map((task) => (
-        <div
-          key={task._id}
-          style={{
-            display: "flex",
-            gap: "10px",
-            marginBottom: "10px",
-            alignItems: "center",
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={task.completed}
-            onChange={() => toggleComplete(task)}
-          />
-
-          <span
+      {tasks.length === 0 ? (
+        <p>No tasks yet</p>
+      ) : (
+        tasks.map((task) => (
+          <div
+            key={task._id}
             style={{
-              textDecoration: task.completed ? "line-through" : "none",
+              marginBottom: "15px",
+              border: "1px solid #ccc",
+              padding: "10px",
+              borderRadius: "5px",
+              width: "350px",
             }}
           >
-            {task.text}
-          </span>
+            <span>{task.text}</span>
 
-          <button onClick={() => handleEdit(task)}>Edit</button>
+            <button
+              onClick={() => editTask(task)}
+              style={{
+                marginLeft: "10px",
+                padding: "5px 10px",
+                cursor: "pointer",
+              }}
+            >
+              Edit
+            </button>
 
-          <button onClick={() => handleDelete(task._id)}>Delete</button>
-        </div>
-      ))}
+            <button
+              onClick={() => deleteTask(task._id)}
+              style={{
+                marginLeft: "10px",
+                padding: "5px 10px",
+                cursor: "pointer",
+                backgroundColor: "red",
+                color: "white",
+                border: "none",
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        ))
+      )}
     </div>
   );
 }
