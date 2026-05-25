@@ -8,50 +8,82 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Home route
+// Home Route
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
 
-// MongoDB connection
+// MongoDB Connection
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected ✅");
-  })
-  .catch((err) => {
-    console.log("MongoDB Error ❌", err);
-  });
+  .then(() => console.log("MongoDB connected ✅"))
+  .catch((err) => console.log("MongoDB error ❌", err));
 
-// Task Schema
+// Schema
 const taskSchema = new mongoose.Schema({
-  text: String,
+  text: {
+    type: String,
+    required: true,
+  },
 });
 
 const Task = mongoose.model("Task", taskSchema);
 
-// GET tasks
+// GET Tasks
 app.get("/api/tasks", async (req, res) => {
-  const tasks = await Task.find();
-  res.json(tasks);
+  try {
+    const tasks = await Task.find();
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-// ADD task
+// ADD Task
 app.post("/api/tasks", async (req, res) => {
-  const newTask = new Task({
-    text: req.body.text,
-  });
+  try {
+    const newTask = new Task({
+      text: req.body.text,
+    });
 
-  await newTask.save();
-  res.json(newTask);
+    const savedTask = await newTask.save();
+    res.status(201).json(savedTask);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-// DELETE task
+// UPDATE Task
+app.put("/api/tasks/:id", async (req, res) => {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      {
+        text: req.body.text,
+      },
+      { new: true }
+    );
+
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// DELETE Task
 app.delete("/api/tasks/:id", async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
-  res.json({ message: "Task deleted" });
+  try {
+    await Task.findByIdAndDelete(req.params.id);
+
+    res.json({
+      message: "Task deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
+// PORT
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
