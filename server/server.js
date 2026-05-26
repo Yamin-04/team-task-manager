@@ -19,11 +19,17 @@ mongoose
   .then(() => console.log("MongoDB connected ✅"))
   .catch((err) => console.log("MongoDB error ❌", err));
 
-// Schema
+// Task Schema
 const taskSchema = new mongoose.Schema({
   text: {
     type: String,
     required: true,
+  },
+
+  status: {
+    type: String,
+    enum: ["Pending", "In Progress", "Completed"],
+    default: "Pending",
   },
 });
 
@@ -44,9 +50,11 @@ app.post("/api/tasks", async (req, res) => {
   try {
     const newTask = new Task({
       text: req.body.text,
+      status: req.body.status || "Pending",
     });
 
     const savedTask = await newTask.save();
+
     res.status(201).json(savedTask);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -60,6 +68,7 @@ app.put("/api/tasks/:id", async (req, res) => {
       req.params.id,
       {
         text: req.body.text,
+        status: req.body.status,
       },
       { new: true }
     );

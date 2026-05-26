@@ -4,6 +4,7 @@ import API from "./api";
 function App() {
   const [tasks, setTasks] = useState([]);
   const [text, setText] = useState("");
+  const [status, setStatus] = useState("Pending");
   const [editingId, setEditingId] = useState(null);
 
   // Fetch Tasks
@@ -12,7 +13,7 @@ function App() {
       const res = await API.get("/tasks");
       setTasks(res.data);
     } catch (error) {
-      console.log("Fetch Error:", error);
+      console.log(error);
     }
   };
 
@@ -26,23 +27,25 @@ function App() {
 
     try {
       if (editingId) {
-        // Update
         await API.put(`/tasks/${editingId}`, {
           text,
+          status,
         });
 
         setEditingId(null);
       } else {
-        // Add
         await API.post("/tasks", {
           text,
+          status,
         });
       }
 
       setText("");
+      setStatus("Pending");
+
       fetchTasks();
     } catch (error) {
-      console.log("Submit Error:", error);
+      console.log(error);
     }
   };
 
@@ -52,43 +55,64 @@ function App() {
       await API.delete(`/tasks/${id}`);
       fetchTasks();
     } catch (error) {
-      console.log("Delete Error:", error);
+      console.log(error);
     }
   };
 
   // Edit Task
   const editTask = (task) => {
     setText(task.text);
+    setStatus(task.status);
     setEditingId(task._id);
   };
 
   return (
-    <div style={{ padding: "30px", fontFamily: "Arial" }}>
+    <div
+      style={{
+        padding: "30px",
+        fontFamily: "Arial",
+      }}
+    >
       <h1>Team Task Manager 🚀</h1>
 
-      <input
-        type="text"
-        placeholder="Enter task"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        style={{
-          padding: "10px",
-          width: "250px",
-          marginRight: "10px",
-        }}
-      />
+      <div style={{ marginBottom: "20px" }}>
+        <input
+          type="text"
+          placeholder="Enter task"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          style={{
+            padding: "10px",
+            marginRight: "10px",
+            width: "250px",
+          }}
+        />
 
-      <button
-        onClick={handleSubmit}
-        style={{
-          padding: "10px 15px",
-          cursor: "pointer",
-        }}
-      >
-        {editingId ? "Update Task" : "Add Task"}
-      </button>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          style={{
+            padding: "10px",
+            marginRight: "10px",
+          }}
+        >
+          <option>Pending</option>
+          <option>In Progress</option>
+          <option>Completed</option>
+        </select>
 
-      <h2 style={{ marginTop: "30px" }}>Tasks</h2>
+        <button
+          onClick={handleSubmit}
+          style={{
+            padding: "10px 15px",
+            cursor: "pointer",
+          }}
+        >
+          {editingId ? "Update Task" : "Add Task"}
+        </button>
+      </div>
+
+      <h2>Tasks</h2>
 
       {tasks.length === 0 ? (
         <p>No tasks yet</p>
@@ -98,13 +122,17 @@ function App() {
             key={task._id}
             style={{
               border: "1px solid #ccc",
-              padding: "10px",
+              padding: "15px",
               marginBottom: "10px",
-              width: "350px",
-              borderRadius: "5px",
+              width: "400px",
+              borderRadius: "8px",
             }}
           >
-            <p>{task.text}</p>
+            <h3>{task.text}</h3>
+
+            <p>
+              <strong>Status:</strong> {task.status}
+            </p>
 
             <button
               onClick={() => editTask(task)}
@@ -123,6 +151,7 @@ function App() {
                 color: "white",
                 border: "none",
                 padding: "5px 10px",
+                cursor: "pointer",
               }}
             >
               Delete
