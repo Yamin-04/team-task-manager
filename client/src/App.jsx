@@ -25,7 +25,7 @@ function App() {
 
   return (
     <div style={{ padding: "30px" }}>
-      <h1>YAMINI TASK MANAGER 🚀</h1>
+      <h1>TASK MANAGER 🚀</h1>
 
       <input
         type="text"
